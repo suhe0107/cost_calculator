@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>开成本费用计算</title>
+    <!-- 引入html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --real-color: #e67e22; /* Color for realistic column */
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --border-color: #e9ecef;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --section-header-bg: #e9ecef;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            margin: auto;
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            padding: 0;
+            position: relative;
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .store-name-container {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .store-name-input {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: none;
+            width: 250px;
+            font-size: 1rem;
+            text-align: center;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .store-name-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: normal;
+        }
+
+        .export-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .export-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .calc-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .calc-table th, .calc-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .calc-table th {
+            text-align: center;
+            background-color: #f1f3f5;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .calc-table th:first-child {
+            text-align: left;
+            width: 30%;
+        }
+
+        .calc-table th:nth-child(2) {
+             color: var(--accent-color);
+             width: 35%;
+        }
+
+        .calc-table th:nth-child(3) {
+             color: var(--real-color);
+             width: 35%;
+        }
+
+        .calc-table td:not(:first-child) {
+            text-align: center;
+        }
+        
+        .section-row td {
+            background-color: var(--section-header-bg);
+            font-weight: 600;
+            color: var(--primary-color);
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            max-width: 100px;
+            padding: 6px 8px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            text-align: right;
+            transition: border-color 0.2s;
+            font-weight: 500;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        /* Specific style for realistic inputs */
+        .real-input:focus {
+            border-color: var(--real-color) !important;
+            box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.1) !important;
+        }
+
+        .unit {
+            margin-left: 5px;
+            color: #888;
+            font-size: 0.85rem;
+            width: 25px;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .result-value {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        
+        .sub-calc-value {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .row-highlight {
+            background-color: #f8f9fa;
+        }
+
+        .row-total {
+            background-color: #e8f4fd;
+        }
+        
+        .row-result {
+            background-color: #fff3cd;
+        }
+
+        .positive {
+            color: var(--success-color);
+        }
+
+        .negative {
+            color: var(--danger-color);
+        }
+
+        .controls {
+            padding: 20px;
+            text-align: center;
+            background-color: #f8f9fa;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .help-tip {
+            font-size: 0.75rem;
+            color: #999;
+            margin-top: 2px;
+            display: block;
+            text-align: left;
+        }
+        
+        .indent {
+            padding-left: 20px;
+        }
+
+        .reset-btn {
+            background-color: #6c757d;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            position: absolute;
+            top: 20px;
+            left: 110px; /* Positioned next to export-btn */
+        }
+
+        .reset-btn:hover {
+            background-color: #5a6268;
+        }
+
+        /* Hide controls for PDF export */
+        @media print {
+            .controls, .export-btn, .reset-btn {
+                display: none !important;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container" id="calculator-container">
+    <div class="header">
+        <button class="export-btn" onclick="exportPDF()" data-html2canvas-ignore>导出PDF</button>
+        <button class="reset-btn" onclick="resetDefaults()" data-html2canvas-ignore>重置</button>
+        <div class="store-name-container" style="margin-top: 0; margin-bottom: 10px;">
+            <input type="text" class="store-name-input" placeholder="请输入门店名称" id="store_name" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);">
+        </div>
+        <h1>开店盈利性测算</h1>
+        <div class="subtitle">作者：TRAE社区蒋文明事业程序员</div>
+    </div>
+
+    <table class="calc-table">
+        <thead>
+            <tr>
+                <th>项目</th>
+                <th>理想数值</th>
+                <th>现实数值</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 收入部分 -->
+            <tr class="section-row"><td colspan="3">收入预估</td></tr>
+            <tr>
+                <td>
+                    客单价
+                    <span class="help-tip">平均每单消费金额</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input ideal-input" data-field="unit_price" data-type="ideal" value="0" step="1">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input real-input" data-field="unit_price" data-type="real" value="0" step="1">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    日单量
+                    <span class="help-tip">每天销售单数</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input ideal-input" data-field="daily_orders" data-type="ideal" value="0" step="5">
+                        <span class="unit">单</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input real-input" data-field="daily_orders" data-type="real" value="0" step="5">
+                        <span class="unit">单</span>
+                    </div>
+                </td>
+            </tr>
+            <tr class="row-highlight">
+                <td>
+                    <strong>营业额/天</strong>
+                    <span class="help-tip">客单价 × 日单量</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="turnover_ideal" class="result-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="turnover_real" class="result-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    税率
+                    <span class="help-tip">依法纳税</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input ideal-input" data-field="tax_rate" data-type="ideal" value="0" step="0.1" max="100">
+                        <span class="unit">%</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input real-input" data-field="tax_rate" data-type="real" value="0" step="0.1" max="100">
+                        <span class="unit">%</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    日毛成本率
+                    <span class="help-tip">进货/被抽成</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input ideal-input" data-field="cost_rate" data-type="ideal" value="0" step="1" max="100">
+                        <span class="unit">%</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input real-input" data-field="cost_rate" data-type="real" value="0" step="1" max="100">
+                        <span class="unit">%</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    毛利率
+                    <span class="help-tip">100% - 税率 - 毛成本率</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="margin_rate_ideal" class="sub-calc-value">100.0</span>
+                        <span class="unit">%</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="margin_rate_real" class="sub-calc-value">100.0</span>
+                        <span class="unit">%</span>
+                    </div>
+                </td>
+            </tr>
+            <tr class="row-highlight">
+                <td><strong>毛利/天</strong></td>
+                <td>
+                    <div class="input-group">
+                        <span id="gross_profit_ideal" class="result-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="gross_profit_real" class="result-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+
+            <!-- 房租部分 -->
+            <tr class="section-row"><td colspan="3">日常运营成本</td></tr>
+            <tr>
+                <td>
+                    租金单价
+                    <span class="help-tip">每平方米每天的价格</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input ideal-input" data-field="rent_price" data-type="ideal" value="0" step="0.1">
+                        <span class="unit">元/㎡</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input real-input" data-field="rent_price" data-type="real" value="0" step="0.1">
+                        <span class="unit">元/㎡</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    店铺面积
+                    <span class="help-tip">租赁合同面积</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input ideal-input" data-field="area" data-type="ideal" value="0" step="1">
+                        <span class="unit">㎡</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input real-input" data-field="area" data-type="real" value="0" step="1">
+                        <span class="unit">㎡</span>
+                    </div>
+                </td>
+            </tr>
+            <tr class="row-highlight">
+                <td><strong>房租/天</strong></td>
+                <td>
+                    <div class="input-group">
+                        <span id="rent_daily_ideal" class="sub-calc-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="rent_daily_real" class="sub-calc-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+
+            <!-- 运营成本 -->
+            
+            <tr>
+                <td>
+                    员工人数
+                    <span class="help-tip">店内总人数</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input ideal-input" data-field="staff_count" data-type="ideal" value="0" step="1">
+                        <span class="unit">人</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input real-input" data-field="staff_count" data-type="real" value="0" step="1">
+                        <span class="unit">人</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    人均日薪
+                    <span class="help-tip">平均每人每天工资</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input ideal-input" data-field="avg_wage" data-type="ideal" value="0" step="10">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input real-input" data-field="avg_wage" data-type="real" value="0" step="10">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+            <tr class="row-highlight">
+                <td><strong>人工成本/天</strong></td>
+                <td>
+                    <div class="input-group">
+                        <span id="labor_ideal" class="sub-calc-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="labor_real" class="sub-calc-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>水电物业/天</td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input ideal-input" data-field="utilities" data-type="ideal" value="0" step="10">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input real-input" data-field="utilities" data-type="real" value="0" step="10">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+
+            <!-- 投资摊销 -->
+            <tr class="section-row"><td colspan="3">投资摊销 (按 <input type="number" id="amortization_years" value="10" style="width: 40px; text-align: center; border: 1px solid #ccc; border-radius: 4px; padding: 2px;"> 年均摊)</td></tr>
+            <tr>
+                <td>
+                    转让费
+                    <span class="help-tip">店铺转让费用</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input ideal-input" data-field="transfer_fee" data-type="ideal" value="0" step="1000">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input real-input" data-field="transfer_fee" data-type="real" value="0" step="1000">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+            
+            <!-- 前期投入明细 -->
+            <tr style="background-color: #fcfcfc;">
+                <td class="indent">设备采购</td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input ideal-input" data-field="invest_equipment" data-type="ideal" value="0" step="1000">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input real-input" data-field="invest_equipment" data-type="real" value="0" step="1000">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+            <tr style="background-color: #fcfcfc;">
+                <td class="indent">装修费用</td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input ideal-input" data-field="invest_renovation" data-type="ideal" value="0" step="1000">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input real-input" data-field="invest_renovation" data-type="real" value="0" step="1000">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+            <tr style="background-color: #fcfcfc;">
+                <td class="indent">首批物料</td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input ideal-input" data-field="invest_materials" data-type="ideal" value="0" step="1000">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input real-input" data-field="invest_materials" data-type="real" value="0" step="1000">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+            <tr style="background-color: #fcfcfc;">
+                <td class="indent">软件服务</td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input ideal-input" data-field="invest_software" data-type="ideal" value="0" step="500">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input real-input" data-field="invest_software" data-type="real" value="0" step="500">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+            <tr style="background-color: #fcfcfc;">
+                <td class="indent">其它杂项</td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input ideal-input" data-field="invest_other" data-type="ideal" value="0" step="500">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <input type="number" class="calc-input real-input" data-field="invest_other" data-type="real" value="0" step="500">
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+            
+            <tr class="row-highlight">
+                <td>
+                    <strong>前期投入总计</strong>
+                    <span class="help-tip">转让费 + 装修设备等所有投入</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="initial_invest_total_ideal" class="sub-calc-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="initial_invest_total_real" class="sub-calc-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+
+            <tr class="row-highlight" style="border-top: 2px solid #e9ecef;">
+                <td><strong>投入摊销/天</strong></td>
+                <td>
+                    <div class="input-group">
+                        <span id="amortization_daily_ideal" class="sub-calc-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="amortization_daily_real" class="sub-calc-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+            
+            <tr class="row-total">
+                <td>
+                    <strong>固定成本总计/天</strong>
+                    <span class="help-tip">房租+人工+水电+摊销</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="fixed_cost_ideal" class="result-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="fixed_cost_real" class="result-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+
+            <!-- 结果部分 -->
+            <tr class="section-row"><td colspan="3">利润分析</td></tr>
+            <tr class="row-result">
+                <td>
+                    <strong>保本线 (营业额)</strong>
+                    <span class="help-tip">每日达到此营业额才不亏本</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="break_even_ideal" class="result-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="break_even_real" class="result-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+            <tr style="background-color: #fffbf0;">
+                <td>
+                    <strong>日纯利</strong>
+                    <span class="help-tip">每天净赚</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="net_profit_daily_ideal" class="result-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="net_profit_daily_real" class="result-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+            <tr style="background-color: #fff7e0;">
+                <td>
+                    <strong>月纯利</strong>
+                    <span class="help-tip">按30.4天计算</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="net_profit_monthly_ideal" class="result-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="net_profit_monthly_real" class="result-value">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+            <tr class="row-result" style="border-bottom: none; background-color: #ffefc0;">
+                <td>
+                    <strong>年纯利</strong>
+                    <span class="help-tip">按365天计算</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="net_profit_yearly_ideal" class="result-value" style="font-size: 1.2rem;">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="net_profit_yearly_real" class="result-value" style="font-size: 1.2rem;">0.00</span>
+                        <span class="unit">元</span>
+                    </div>
+                </td>
+            </tr>
+            <tr style="background-color: #e8f4fd; border-top: 2px solid #e9ecef;">
+                <td>
+                    <strong>预计回本周期</strong>
+                    <span class="help-tip">总投入 / 月纯利</span>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="payback_period_ideal" class="result-value" style="color: #2c3e50;">0.0</span>
+                        <span class="unit">月</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group">
+                        <span id="payback_period_real" class="result-value" style="color: #2c3e50;">0.0</span>
+                        <span class="unit">月</span>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <div class="controls" data-html2canvas-ignore style="display: none;">
+        <!-- Reset button moved to header -->
+    </div>
+</div>
+
+<script>
+    // 获取所有输入框
+    let allInputs = document.querySelectorAll('.calc-input');
+
+    // 格式化数字
+    function formatMoney(num) {
+        return num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // 单个场景计算函数
+    function calculateScenario(type) {
+        // 获取该场景下的所有输入值
+        const getInput = (field) => {
+            const el = document.querySelector(`.calc-input[data-field="${field}"][data-type="${type}"]`);
+            return parseFloat(el?.value) || 0;
+        };
+
+        const unit_price = getInput('unit_price');
+        const daily_orders = getInput('daily_orders');
+        const turnover = unit_price * daily_orders;
+
+        // 计算毛利率 = 100 - 税率 - 毛成本率
+        const tax_rate = getInput('tax_rate');
+        const cost_rate = getInput('cost_rate');
+        const margin_rate = 100 - tax_rate - cost_rate;
+        
+        // 房租计算
+        const rent_price = getInput('rent_price');
+        const area = getInput('area');
+        const rent_daily = rent_price * area;
+
+        // 摊销计算 (10年 = 3650天)
+        const transfer_fee = getInput('transfer_fee');
+        
+        // 前期投入明细
+        const invest_equipment = getInput('invest_equipment');
+        const invest_renovation = getInput('invest_renovation');
+        const invest_materials = getInput('invest_materials');
+        const invest_software = getInput('invest_software');
+        const invest_other = getInput('invest_other');
+        
+        // 前期投入总计 (包含转让费)
+        const initial_invest_total = transfer_fee + invest_equipment + invest_renovation + invest_materials + invest_software + invest_other;
+        
+        // 获取摊销年限
+        const amortization_years = parseFloat(document.getElementById('amortization_years').value) || 10;
+        const amortization_days = amortization_years * 365;
+
+        const amortization_daily = initial_invest_total / amortization_days;
+
+        const staff_count = getInput('staff_count');
+        const avg_wage = getInput('avg_wage');
+        const labor = staff_count * avg_wage;
+
+        const utilities = getInput('utilities');
+
+        // 1. 计算毛利
+        const gross_profit = turnover * (margin_rate / 100);
+
+        // 2. 计算总固定成本 = 房租 + 摊销 + 人工 + 水电
+        const fixed_cost = rent_daily + amortization_daily + labor + utilities;
+
+        // 3. 计算保本线
+        let break_even = 0;
+        if (margin_rate > 0) {
+            break_even = fixed_cost / (margin_rate / 100);
+        } else {
+            break_even = fixed_cost > 0 ? Infinity : 0;
+        }
+
+        // 4. 计算纯利
+        const net_profit_daily = gross_profit - fixed_cost;
+        const net_profit_monthly = net_profit_daily * 30.416; // 平均每月天数 (365/12)
+        const net_profit_yearly = net_profit_daily * 365;
+
+        // 5. 计算回本周期 (月)
+        let payback_period = 0;
+        if (net_profit_monthly > 0) {
+            payback_period = initial_invest_total / net_profit_monthly;
+        } else {
+            payback_period = Infinity;
+        }
+
+        // 更新UI - 辅助显示
+        const setOutput = (id, value) => {
+            const el = document.getElementById(`${id}_${type}`);
+            if (!el) return;
+            
+            if (value === Infinity) {
+                el.textContent = "∞"; // 无法回本
+            } else {
+                // 如果是回本周期，保留1位小数
+                if (id === 'payback_period') {
+                    el.textContent = value.toFixed(1);
+                } else {
+                    el.textContent = formatMoney(value);
+                }
+            }
+
+            // 特殊处理纯利颜色
+            if (id.startsWith('net_profit')) {
+                if (value > 0) el.className = "result-value positive";
+                else if (value < 0) el.className = "result-value negative";
+                else el.className = "result-value";
+                
+                // 年利润字体加大
+                if (id.includes('yearly')) {
+                    el.style.fontSize = "1.2rem";
+                }
+            }
+        };
+
+        setOutput('turnover', turnover);
+        setOutput('margin_rate', margin_rate); // 更新毛利率显示
+        setOutput('gross_profit', gross_profit);
+        setOutput('rent_daily', rent_daily);
+        setOutput('initial_invest_total', initial_invest_total); // 更新前期投入总计
+        setOutput('amortization_daily', amortization_daily);
+        setOutput('labor', labor);
+        setOutput('fixed_cost', fixed_cost);
+        setOutput('break_even', break_even);
+        
+        setOutput('net_profit_daily', net_profit_daily);
+        setOutput('net_profit_monthly', net_profit_monthly);
+        setOutput('net_profit_yearly', net_profit_yearly);
+        setOutput('payback_period', payback_period);
+    }
+
+    // 主计算函数 - 计算所有场景
+    function calculateAll() {
+        calculateScenario('ideal');
+        calculateScenario('real');
+    }
+
+    // 绑定事件
+    // 重新获取输入框，因为HTML结构已更改 (虽然只是内容变了，但保险起见)
+    allInputs = document.querySelectorAll('.calc-input');
+    
+    allInputs.forEach(input => {
+        input.addEventListener('input', () => {
+            calculateScenario(input.dataset.type);
+        });
+    });
+    
+    // 绑定摊销年限变更事件
+    document.getElementById('amortization_years').addEventListener('input', calculateAll);
+
+    // 重置功能
+    function resetDefaults() {
+        allInputs.forEach(input => {
+            input.value = 0;
+        });
+        
+        // 重置门店名称和摊销年限
+        document.getElementById('store_name').value = '';
+        document.getElementById('amortization_years').value = 10;
+
+        calculateAll();
+    }
+
+    // PDF导出功能
+    function exportPDF() {
+        const element = document.getElementById('calculator-container');
+        const storeName = document.getElementById('store_name').value || '成本计算表';
+        const date = new Date().toLocaleDateString();
+        
+        const opt = {
+            margin:       10,
+            filename:     `${storeName}_${date}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // New Promise-based usage:
+        html2pdf().set(opt).from(element).save();
+    }
+
+    // 初始化计算
+    calculateAll();
+
+</script>
+
+</body>
+</html>
