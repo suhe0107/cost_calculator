@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健身房选址评估系统</title>
+    <!-- 引入html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- 引入Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --real-color: #e67e22;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --border-color: #e9ecef;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --section-header-bg: #e9ecef;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            margin: auto;
+            width: 100%;
+            max-width: 1200px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            padding: 0;
+            position: relative;
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .export-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .export-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .reset-btn {
+            position: absolute;
+            top: 20px;
+            left: 110px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .reset-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background-color: var(--section-header-bg);
+            padding: 15px;
+            font-weight: 600;
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-content {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .form-col {
+            flex: 1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        input[type="checkbox"] {
+            margin-right: 5px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: #d3d3d3;
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .weight-value {
+            width: 50px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .result-card {
+            background-color: #f8f9fa;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .score-display {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .score-circle {
+            display: inline-block;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: #e8f4fd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            position: relative;
+        }
+
+        .score-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        .score-level {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        .strengths-weaknesses {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .strengths,
+        .weaknesses {
+            flex: 1;
+            background-color: #f8f9fa;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .strengths h4,
+        .weaknesses h4 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        .strengths ul,
+        .weaknesses ul {
+            padding-left: 20px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background-color: #f1f3f5;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .comparison-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-accent {
+            background-color: var(--accent-color);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+        }
+
+        .help-tip {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 5px;
+            display: block;
+        }
+
+        /* Hide controls for PDF export */
+        @media print {
+            .export-btn, .reset-btn {
+                display: none !important;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container" id="evaluator-container">
+    <div class="header">
+        <button class="export-btn" onclick="exportPDF()" data-html2canvas-ignore>导出PDF</button>
+        <button class="reset-btn" onclick="resetDefaults()" data-html2canvas-ignore>重置</button>
+        <h1>健身房选址评估系统</h1>
+        <div class="subtitle">基于6大核心指标的科学选址决策工具</div>
+    </div>
+
+    <div class="content">
+        <!-- 地址信息 -->
+        <div class="section">
+            <div class="section-header">1. 地址信息</div>
+            <div class="section-content">
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="location-name">候选地址名称</label>
+                            <input type="text" id="location-name" placeholder="例如：XX商圈店">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="address">详细地址</label>
+                            <input type="text" id="address" placeholder="请输入详细地址">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="description">周边环境描述</label>
+                    <textarea id="description" rows="3" placeholder="描述周边的商业环境、交通状况等"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- 核心指标评估 -->
+        <div class="section">
+            <div class="section-header">2. 核心指标评估</div>
+            <div class="section-content">
+                <!-- 目标客群与人口密度 -->
+                <div class="form-group">
+                    <h4>2.1 目标客群与人口密度</h4>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="young-population">年轻人口占比 (%)</label>
+                            <input type="number" id="young-population" min="0" max="100" step="1">
+                            <span class="help-tip">建议≥40%</span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="nearby-offices">周边写字楼数量 (员工≥500人)</label>
+                            <input type="number" id="nearby-offices" min="0" step="1">
+                        </div>
+                        <div class="form-col">
+                            <label for="nearby-universities">周边高校数量</label>
+                            <input type="number" id="nearby-universities" min="0" step="1">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="nearby-communities">周边中高端社区数量</label>
+                            <input type="number" id="nearby-communities" min="0" step="1">
+                        </div>
+                        <div class="form-col">
+                            <label for="health-businesses">周边健康消费场所数量</label>
+                            <input type="number" id="health-businesses" min="0" step="1">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 交通与可达性 -->
+                <div class="form-group">
+                    <h4>2.2 交通与可达性</h4>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="walking-time">步行可达时间 (分钟)</label>
+                            <input type="number" id="walking-time" min="0" step="1">
+                            <span class="help-tip">建议≤15分钟</span>
+                        </div>
+                        <div class="form-col">
+                            <label for="main-road-frontage">主入口临街面宽度 (米)</label>
+                            <input type="number" id="main-road-frontage" min="0" step="0.1">
+                            <span class="help-tip">建议≥8米</span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="metro-distance">距离地铁站 (米)</label>
+                            <input type="number" id="metro-distance" min="0" step="1">
+                            <span class="help-tip">建议≤500米</span>
+                        </div>
+                        <div class="form-col">
+                            <label for="bus-routes">途经公交路线数量</label>
+                            <input type="number" id="bus-routes" min="0" step="1">
+                            <span class="help-tip">建议≥3条</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="parking-spaces">停车位数量</label>
+                        <input type="number" id="parking-spaces" min="0" step="1">
+                        <span class="help-tip">建议每50㎡健身房面积配1个专用车位</span>
+                    </div>
+                </div>
+
+                <!-- 人流与曝光度 -->
+                <div class="form-group">
+                    <h4>2.3 人流与曝光度</h4>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="car-flow">门前道路车流量 (辆/天)</label>
+                            <input type="number" id="car-flow" min="0" step="10">
+                        </div>
+                        <div class="form-col">
+                            <label for="pedestrian-flow">门前道路人流量 (人/天)</label>
+                            <input type="number" id="pedestrian-flow" min="0" step="10">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="exposure-level">门面曝光度</label>
+                        <select id="exposure-level">
+                            <option value="1">差</option>
+                            <option value="2">一般</option>
+                            <option value="3">良好</option>
+                            <option value="4">优秀</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 建筑硬件与空间结构 -->
+                <div class="form-group">
+                    <h4>2.4 建筑硬件与空间结构</h4>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="floor">楼层</label>
+                            <input type="number" id="floor" min="1" step="1">
+                            <span class="help-tip">建议1-3层</span>
+                        </div>
+                        <div class="form-col">
+                            <label for="ceiling-height">层高 (米)</label>
+                            <input type="number" id="ceiling-height" min="0" step="0.1">
+                            <span class="help-tip">建议≥3.5米，器械区建议≥4米</span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="bearing-capacity">承重能力 (kg/㎡)</label>
+                            <input type="number" id="bearing-capacity" min="0" step="10">
+                            <span class="help-tip">建议≥400-500kg/㎡</span>
+                        </div>
+                        <div class="form-col">
+                            <label for="area">面积 (㎡)</label>
+                            <input type="number" id="area" min="0" step="1">
+                            <span class="help-tip">建议≥500㎡</span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="ventilation">通风换气量 (㎡/人·小时)</label>
+                            <input type="number" id="ventilation" min="0" step="5">
+                            <span class="help-tip">建议≥40㎡/人·小时</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 竞争与市场饱和度 -->
+                <div class="form-group">
+                    <h4>2.5 竞争与市场饱和度</h4>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="nearby-gyms">周边同类健身房数量</label>
+                            <input type="number" id="nearby-gyms" min="0" step="1">
+                            <span class="help-tip">建议≤2家</span>
+                        </div>
+                        <div class="form-col">
+                            <label for="alternative-places">替代性运动场所数量</label>
+                            <input type="number" id="alternative-places" min="0" step="1">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="market-saturation">市场饱和度</label>
+                        <select id="market-saturation">
+                            <option value="1">低</option>
+                            <option value="2">中</option>
+                            <option value="3">高</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 合规与安全 -->
+                <div class="form-group">
+                    <h4>2.6 合规与安全</h4>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" id="fire-safety"> 消防合规</label>
+                        <label><input type="checkbox" id="health-conditions"> 卫生条件达标</label>
+                        <label><input type="checkbox" id="noise-control"> 噪音控制达标</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 权重设置 -->
+        <div class="section">
+            <div class="section-header">3. 权重设置</div>
+            <div class="section-content">
+                <div class="form-group">
+                    <label for="target-audience-weight">目标客群与人口密度权重</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="target-audience-weight" min="0" max="50" step="1" value="15">
+                        <span class="weight-value" id="target-audience-weight-value">15%</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="transportation-weight">交通与可达性权重</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="transportation-weight" min="0" max="50" step="1" value="15">
+                        <span class="weight-value" id="transportation-weight-value">15%</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="foot-traffic-weight">人流与曝光度权重</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="foot-traffic-weight" min="0" max="50" step="1" value="15">
+                        <span class="weight-value" id="foot-traffic-weight-value">15%</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="building-structure-weight">建筑硬件与空间结构权重</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="building-structure-weight" min="0" max="50" step="1" value="20">
+                        <span class="weight-value" id="building-structure-weight-value">20%</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="competition-weight">竞争与市场饱和度权重</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="competition-weight" min="0" max="50" step="1" value="10">
+                        <span class="weight-value" id="competition-weight-value">10%</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="compliance-weight">合规与安全权重</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="compliance-weight" min="0" max="50" step="1" value="10">
+                        <span class="weight-value" id="compliance-weight-value">10%</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>总权重：<span id="total-weight">100%</span></label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 评估结果 -->
+        <div class="section">
+            <div class="section-header">4. 评估结果</div>
+            <div class="section-content">
+                <div class="score-display">
+                    <div class="score-circle">
+                        <span class="score-value" id="total-score">0</span>
+                    </div>
+                    <div class="score-level" id="score-level">未评估</div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="radar-chart"></canvas>
+                </div>
+                
+                <div class="strengths-weaknesses">
+                    <div class="strengths">
+                        <h4>优势</h4>
+                        <ul id="strengths-list">
+                            <li>请先填写评估数据</li>
+                        </ul>
+                    </div>
+                    <div class="weaknesses">
+                        <h4>劣势</h4>
+                        <ul id="weaknesses-list">
+                            <li>请先填写评估数据</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="btn btn-accent" onclick="calculateEvaluation()">开始评估</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 初始化变量
+    let radarChart = null;
+
+    // 权重滑块事件监听
+    document.querySelectorAll('.slider').forEach(slider => {
+        slider.addEventListener('input', function() {
+            const valueElement = document.getElementById(this.id + '-value');
+            valueElement.textContent = this.value + '%';
+            updateTotalWeight();
+        });
+    });
+
+    // 更新总权重
+    function updateTotalWeight() {
+        const weights = [
+            parseInt(document.getElementById('target-audience-weight').value),
+            parseInt(document.getElementById('transportation-weight').value),
+            parseInt(document.getElementById('foot-traffic-weight').value),
+            parseInt(document.getElementById('building-structure-weight').value),
+            parseInt(document.getElementById('competition-weight').value),
+            parseInt(document.getElementById('compliance-weight').value)
+        ];
+        const total = weights.reduce((sum, weight) => sum + weight, 0);
+        document.getElementById('total-weight').textContent = total + '%';
+    }
+
+    // 计算评估结果
+    function calculateEvaluation() {
+        // 获取各项指标得分
+        const targetAudienceScore = calculateTargetAudienceScore();
+        const transportationScore = calculateTransportationScore();
+        const footTrafficScore = calculateFootTrafficScore();
+        const buildingStructureScore = calculateBuildingStructureScore();
+        const competitionScore = calculateCompetitionScore();
+        const complianceScore = calculateComplianceScore();
+
+        // 获取权重
+        const weights = {
+            targetAudience: parseInt(document.getElementById('target-audience-weight').value) / 100,
+            transportation: parseInt(document.getElementById('transportation-weight').value) / 100,
+            footTraffic: parseInt(document.getElementById('foot-traffic-weight').value) / 100,
+            buildingStructure: parseInt(document.getElementById('building-structure-weight').value) / 100,
+            competition: parseInt(document.getElementById('competition-weight').value) / 100,
+            compliance: parseInt(document.getElementById('compliance-weight').value) / 100
+        };
+
+        // 计算综合得分
+        const totalScore = (
+            targetAudienceScore * weights.targetAudience +
+            transportationScore * weights.transportation +
+            footTrafficScore * weights.footTraffic +
+            buildingStructureScore * weights.buildingStructure +
+            competitionScore * weights.competition +
+            complianceScore * weights.compliance
+        ).toFixed(1);
+
+        // 更新得分显示
+        document.getElementById('total-score').textContent = totalScore;
+        
+        // 确定评估等级
+        let level = '未评估';
+        if (totalScore >= 80) {
+            level = '优秀';
+        } else if (totalScore >= 60) {
+            level = '良好';
+        } else {
+            level = '不推荐';
+        }
+        document.getElementById('score-level').textContent = level;
+
+        // 更新雷达图
+        updateRadarChart(targetAudienceScore, transportationScore, footTrafficScore, buildingStructureScore, competitionScore, complianceScore);
+
+        // 分析优势劣势
+        analyzeStrengthsWeaknesses(targetAudienceScore, transportationScore, footTrafficScore, buildingStructureScore, competitionScore, complianceScore);
+    }
+
+    // 计算目标客群与人口密度得分
+    function calculateTargetAudienceScore() {
+        const youngPopulation = parseInt(document.getElementById('young-population').value) || 0;
+        const nearbyOffices = parseInt(document.getElementById('nearby-offices').value) || 0;
+        const nearbyUniversities = parseInt(document.getElementById('nearby-universities').value) || 0;
+        const nearbyCommunities = parseInt(document.getElementById('nearby-communities').value) || 0;
+        const healthBusinesses = parseInt(document.getElementById('health-businesses').value) || 0;
+
+        let score = 0;
+        score += Math.min(youngPopulation / 40 * 50, 50); // 年轻人口占比
+        score += Math.min(nearbyOffices * 5, 15); // 周边写字楼
+        score += Math.min(nearbyUniversities * 5, 10); // 周边高校
+        score += Math.min(nearbyCommunities * 3, 10); // 周边社区
+        score += Math.min(healthBusinesses * 2, 15); // 健康消费场所
+
+        return Math.min(score, 100);
+    }
+
+    // 计算交通与可达性得分
+    function calculateTransportationScore() {
+        const walkingTime = parseInt(document.getElementById('walking-time').value) || 0;
+        const mainRoadFrontage = parseFloat(document.getElementById('main-road-frontage').value) || 0;
+        const metroDistance = parseInt(document.getElementById('metro-distance').value) || 0;
+        const busRoutes = parseInt(document.getElementById('bus-routes').value) || 0;
+        const parkingSpaces = parseInt(document.getElementById('parking-spaces').value) || 0;
+
+        let score = 0;
+        score += Math.max(0, 25 - walkingTime * 1); // 步行时间
+        score += Math.min(mainRoadFrontage / 8 * 20, 20); // 临街面宽度
+        score += Math.max(0, 25 - metroDistance / 20); // 地铁站距离
+        score += Math.min(busRoutes * 7, 20); // 公交路线
+        score += Math.min(parkingSpaces * 3, 15); // 停车位
+
+        return Math.min(score, 100);
+    }
+
+    // 计算人流与曝光度得分
+    function calculateFootTrafficScore() {
+        const carFlow = parseInt(document.getElementById('car-flow').value) || 0;
+        const pedestrianFlow = parseInt(document.getElementById('pedestrian-flow').value) || 0;
+        const exposureLevel = parseInt(document.getElementById('exposure-level').value) || 1;
+
+        let score = 0;
+        score += Math.min(carFlow / 1000 * 20, 40); // 车流量
+        score += Math.min(pedestrianFlow / 500 * 20, 40); // 人流量
+        score += exposureLevel * 5; // 曝光度
+
+        return Math.min(score, 100);
+    }
+
+    // 计算建筑硬件与空间结构得分
+    function calculateBuildingStructureScore() {
+        const floor = parseInt(document.getElementById('floor').value) || 1;
+        const ceilingHeight = parseFloat(document.getElementById('ceiling-height').value) || 0;
+        const bearingCapacity = parseInt(document.getElementById('bearing-capacity').value) || 0;
+        const area = parseInt(document.getElementById('area').value) || 0;
+        const ventilation = parseInt(document.getElementById('ventilation').value) || 0;
+
+        let score = 0;
+        score += Math.max(0, 20 - (floor - 1) * 5); // 楼层
+        score += Math.min(ceilingHeight / 4 * 20, 20); // 层高
+        score += Math.min(bearingCapacity / 500 * 20, 20); // 承重
+        score += Math.min(area / 500 * 20, 20); // 面积
+        score += Math.min(ventilation / 40 * 20, 20); // 通风
+
+        return Math.min(score, 100);
+    }
+
+    // 计算竞争与市场饱和度得分
+    function calculateCompetitionScore() {
+        const nearbyGyms = parseInt(document.getElementById('nearby-gyms').value) || 0;
+        const alternativePlaces = parseInt(document.getElementById('alternative-places').value) || 0;
+        const marketSaturation = parseInt(document.getElementById('market-saturation').value) || 1;
+
+        let score = 100;
+        score -= nearbyGyms * 15; // 周边健身房
+        score -= alternativePlaces * 5; // 替代性场所
+        score -= (marketSaturation - 1) * 20; // 市场饱和度
+
+        return Math.max(score, 0);
+    }
+
+    // 计算合规与安全得分
+    function calculateComplianceScore() {
+        const fireSafety = document.getElementById('fire-safety').checked;
+        const healthConditions = document.getElementById('health-conditions').checked;
+        const noiseControl = document.getElementById('noise-control').checked;
+
+        let score = 0;
+        score += fireSafety ? 34 : 0;
+        score += healthConditions ? 33 : 0;
+        score += noiseControl ? 33 : 0;
+
+        return score;
+    }
+
+    // 更新雷达图
+    function updateRadarChart(targetAudience, transportation, footTraffic, buildingStructure, competition, compliance) {
+        const ctx = document.getElementById('radar-chart').getContext('2d');
+        
+        if (radarChart) {
+            radarChart.destroy();
+        }
+        
+        radarChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['目标客群', '交通可达', '人流曝光', '建筑结构', '竞争情况', '合规安全'],
+                datasets: [{
+                    label: '得分',
+                    data: [targetAudience, transportation, footTraffic, buildingStructure, competition, compliance],
+                    backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                    borderColor: 'rgba(52, 152, 219, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(52, 152, 219, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(52, 152, 219, 1)'
+                }]
+            },
+            options: {
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 分析优势劣势
+    function analyzeStrengthsWeaknesses(targetAudience, transportation, footTraffic, buildingStructure, competition, compliance) {
+        const strengths = [];
+        const weaknesses = [];
+        
+        if (targetAudience >= 80) strengths.push('目标客群质量高');
+        if (targetAudience < 60) weaknesses.push('目标客群质量待提升');
+        
+        if (transportation >= 80) strengths.push('交通便利度高');
+        if (transportation < 60) weaknesses.push('交通便利度待提升');
+        
+        if (footTraffic >= 80) strengths.push('人流量大，曝光度高');
+        if (footTraffic < 60) weaknesses.push('人流量不足，曝光度低');
+        
+        if (buildingStructure >= 80) strengths.push('建筑结构优质');
+        if (buildingStructure < 60) weaknesses.push('建筑结构待改善');
+        
+        if (competition >= 80) strengths.push('竞争压力小');
+        if (competition < 60) weaknesses.push('竞争压力大');
+        
+        if (compliance >= 80) strengths.push('合规与安全达标');
+        if (compliance < 60) weaknesses.push('合规与安全需加强');
+        
+        // 更新优势劣势列表
+        const strengthsList = document.getElementById('strengths-list');
+        const weaknessesList = document.getElementById('weaknesses-list');
+        
+        strengthsList.innerHTML = '';
+        weaknessesList.innerHTML = '';
+        
+        if (strengths.length === 0) {
+            strengthsList.innerHTML = '<li>暂无明显优势</li>';
+        } else {
+            strengths.forEach(strength => {
+                const li = document.createElement('li');
+                li.textContent = strength;
+                strengthsList.appendChild(li);
+            });
+        }
+        
+        if (weaknesses.length === 0) {
+            weaknessesList.innerHTML = '<li>暂无明显劣势</li>';
+        } else {
+            weaknesses.forEach(weakness => {
+                const li = document.createElement('li');
+                li.textContent = weakness;
+                weaknessesList.appendChild(li);
+            });
+        }
+    }
+
+    // 重置默认值
+    function resetDefaults() {
+        // 重置地址信息
+        document.getElementById('location-name').value = '';
+        document.getElementById('address').value = '';
+        document.getElementById('description').value = '';
+        
+        // 重置核心指标
+        document.getElementById('young-population').value = '';
+        document.getElementById('nearby-offices').value = '';
+        document.getElementById('nearby-universities').value = '';
+        document.getElementById('nearby-communities').value = '';
+        document.getElementById('health-businesses').value = '';
+        
+        document.getElementById('walking-time').value = '';
+        document.getElementById('main-road-frontage').value = '';
+        document.getElementById('metro-distance').value = '';
+        document.getElementById('bus-routes').value = '';
+        document.getElementById('parking-spaces').value = '';
+        
+        document.getElementById('car-flow').value = '';
+        document.getElementById('pedestrian-flow').value = '';
+        document.getElementById('exposure-level').value = '1';
+        
+        document.getElementById('floor').value = '';
+        document.getElementById('ceiling-height').value = '';
+        document.getElementById('bearing-capacity').value = '';
+        document.getElementById('area').value = '';
+        document.getElementById('ventilation').value = '';
+        
+        document.getElementById('nearby-gyms').value = '';
+        document.getElementById('alternative-places').value = '';
+        document.getElementById('market-saturation').value = '1';
+        
+        document.getElementById('monthly-rent').value = '';
+        document.getElementById('estimated-revenue').value = '';
+        document.getElementById('renovation-cost').value = '';
+        document.getElementById('equipment-cost').value = '';
+        document.getElementById('free-rent-period').value = '';
+        document.getElementById('lease-term').value = '';
+        
+        document.getElementById('fire-safety').checked = false;
+        document.getElementById('health-conditions').checked = false;
+        document.getElementById('noise-control').checked = false;
+        
+        // 重置权重
+        document.getElementById('target-audience-weight').value = '15';
+        document.getElementById('transportation-weight').value = '15';
+        document.getElementById('foot-traffic-weight').value = '15';
+        document.getElementById('building-structure-weight').value = '20';
+        document.getElementById('competition-weight').value = '10';
+        document.getElementById('compliance-weight').value = '10';
+        
+        // 更新权重显示
+        document.getElementById('target-audience-weight-value').textContent = '15%';
+        document.getElementById('transportation-weight-value').textContent = '15%';
+        document.getElementById('foot-traffic-weight-value').textContent = '15%';
+        document.getElementById('building-structure-weight-value').textContent = '20%';
+        document.getElementById('competition-weight-value').textContent = '10%';
+        document.getElementById('compliance-weight-value').textContent = '10%';
+        document.getElementById('total-weight').textContent = '100%';
+        
+        // 重置评估结果
+        document.getElementById('total-score').textContent = '0';
+        document.getElementById('score-level').textContent = '未评估';
+        
+        // 重置优势劣势
+        document.getElementById('strengths-list').innerHTML = '<li>请先填写评估数据</li>';
+        document.getElementById('weaknesses-list').innerHTML = '<li>请先填写评估数据</li>';
+        
+        // 重置图表
+        if (radarChart) {
+            radarChart.destroy();
+            radarChart = null;
+        }
+    }
+
+    // PDF导出功能
+    function exportPDF() {
+        const element = document.getElementById('evaluator-container');
+        const locationName = document.getElementById('location-name').value || '选址评估';
+        const date = new Date().toLocaleDateString();
+        
+        const opt = {
+            margin:       10,
+            filename:     `${locationName}_选址评估_${date}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // New Promise-based usage:
+        html2pdf().set(opt).from(element).save();
+    }
+
+</script>
+
+</body>
+</html>
